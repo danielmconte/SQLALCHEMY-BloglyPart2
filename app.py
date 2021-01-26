@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, redirect, flash, session
 from flask_debugtoolbar import DebugToolbarExtension
-from models import db, connect_db, User, Post
+from models import db, connect_db, User, Post, Tag, PostTag
 
 app = Flask(__name__)
 
@@ -124,7 +124,59 @@ def delete_post(post_id):
 
     return redirect(f"/users/{post_code}")
 
+# Part 3 Adding Tags
 
+@app.route('/tags')
+def list_tags():
+    tags = Tag.query.all()
+    return render_template('tag_list.html', tags=tags)
+
+@app.route('/tags/<int:tag_id>')
+def show_tags(tag_id):
+    directory = db.session.query(PostTag.tag_id, PostTag.post_id, Post.title).outerjoin(Post).all()
+    tag = Tag.query.get_or_404(tag_id)
+    return render_template('show_tag.html', tag= tag, posts=directory)
+
+@app.route('/tags/new')
+def new_tag_form():
+    return render_template('new_tag_form.html')
+
+@app.route('/tags/new', methods=["POST"])
+def post_new_tag():
+    tag_name = request.form["tag_name"]
+
+    new_tag = Tag(name=tag_name)
+    db.session.add(new_tag)
+    db.session.commit()
+    return redirect('/tags')
+
+@app.route('/tags/<int:tag_id>/edit')
+def show_tag_edit_form(tag_id):
+    tag = Tag.query.get_or_404(tag_id)
+    return render_template('tag_edit_form.html', tag=tag)
+
+@app.route('/tags/<int:tag_id>/edit', methods=["POST"])
+def post_tag_edit_form(tag_id):
+    tag_name = request.form["tag_name"]
+
+
+    tag = Tag.query.get_or_404(tag_id)
+
+    tag.name = tag_name
+
+    db.session.add(tag)
+    db.session.commit()
+
+    return redirect(f"/tags")
+
+@app.route('/tags/<int:tag_id>/delete')
+def delete_tag(tag_id):
+    tag = Tag.query.filter_by(id=tag_id).delete()
+    db.session.commit()
+
+    return redirect("/tags")
+
+    #need to add tags on post.html, tag checkboxes on Add Post, and Edit Post 
 
 
 
